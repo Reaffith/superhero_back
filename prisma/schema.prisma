@@ -28,7 +28,8 @@ model SuperHero {
 
 model Image {
   id          Int       @id @default(autoincrement())
-  url         String
+  data        Bytes
+  mimeType    String
   superheroId Int
   superhero   SuperHero @relation(fields: [superheroId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
