@@ -188,4 +188,10 @@ export class SuperHeroService {
 
     return result;
   }
+
+  async getPages() {
+    const heroes = await this.prisma.superHero.count();
+
+    return Math.ceil(heroes / 5);
+  }
 }

@@ -70,4 +70,9 @@ export class SuperHeroController {
 
     return result;
   }
+
+  @Get('pages')
+  async getPages() {
+    return await this.service.getPages();
+  }
 }
