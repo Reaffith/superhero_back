@@ -1,98 +1,263 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Superhero Database Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Project Overview
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This project is the backend for a superhero database web application, enabling CRUD operations on the `SuperHero` model. It is built using **NestJS**, **Prisma** for PostgreSQL database interactions, and **Multer** for handling image uploads. The backend fulfills the test assignment requirements, supporting creation, updating, deletion, listing, and detailed viewing of superheroes with associated images and pagination.
 
-## Description
+### Key Features
+- **Create Superhero**: Add a new superhero with all fields and associated images.
+- **Update Superhero**: Modify superhero fields, add new images, and delete existing ones.
+- **Delete Superhero**: Remove a superhero and all associated images.
+- **List Superheroes**: View a paginated list of superheroes (5 items per page) with one image per superhero.
+- **View Superhero Details**: Retrieve full details of a single superhero, including all images.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Technologies Used
+- **Node.js**: Runtime environment.
+- **NestJS**: Framework for building scalable server-side applications.
+- **Prisma**: ORM for PostgreSQL database management.
+- **Multer**: Middleware for handling `multipart/form-data` and image uploads.
+- **PostgreSQL**: Database for storing superhero and image data.
 
-## Project setup
+## Prerequisites
+- **Node.js**: Version 16.x or higher.
+- **PostgreSQL**: Version 13.x or higher.
+- **npm**: Version 8.x or higher.
 
-```bash
-$ npm install
+## Setup Instructions
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/Reaffith/superhero_back.git
+   cd superhero_back
+   ```
+
+2. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment Variables**:
+   Update a `.env` file in the project root and change the Data Base URL like this:
+   ```env
+   DATABASE_URL="postgresql://<username>:<password>@localhost:5432/superhero_db?schema=public"
+   ```
+   Replace `<username>`, `<password>`, and `superhero_db` with your PostgreSQL credentials and database name.
+
+4. **Set Up the Database**:
+   - Ensure PostgreSQL is running.
+   - Create a database named `superhero_db`.
+   - Run Prisma migrations to set up the schema:
+     ```bash
+     npx prisma migrate dev --name init
+     ```
+
+5. **Start the Application**:
+   ```bash
+   npm run start:dev
+   ```
+   The server will run on `http://localhost:3000`.
+
+## Database Schema
+
+The Prisma schema defines two models:
+
+```prisma
+model SuperHero {
+  id                  Int      @id @default(autoincrement())
+  nickname            String   @unique
+  real_name           String
+  origin_description  String
+  superpowers         String[] // Array of strings
+  catch_phrase        String
+  images              Image[]  // One-to-many relation
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Image {
+  id          Int       @id @default(autoincrement())
+  data        Bytes     // Binary image data
+  mimeType    String    // e.g., 'image/jpeg'
+  superheroId Int
+  superhero   SuperHero @relation(fields: [superheroId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+}
 ```
 
-## Compile and run the project
+## API Endpoints
 
-```bash
-# development
-$ npm run start
+### 1. Create Superhero
+- **Method**: `POST`
+- **URL**: `/superhero`
+- **Content-Type**: `multipart/form-data`
+- **Body**:
+  - `nickname`: String (required, unique)
+  - `real_name`: String (required)
+  - `origin_description`: String (required)
+  - `superpowers`: Array of strings (required, sent as repeated keys)
+  - `catch_phrase`: String (required)
+  - `images`: Files (required, max 10, .jpg/.jpeg/.png, 5MB each)
+- **Example**:
+  ```bash
+  curl -X POST http://localhost:3000/superhero \
+    -F "nickname=Superman" \
+    -F "real_name=Clark Kent" \
+    -F "origin_description=Born on Krypton..." \
+    -F "superpowers=flight" \
+    -F "superpowers=super strength" \
+    -F "catch_phrase=Look, up in the sky!" \
+    -F "images=@superman1.jpg" \
+    -F "images=@superman2.png"
+  ```
+- **Response** (200 OK):
+  ```json
+  {
+    "id": 1,
+    "nickname": "Superman",
+    "real_name": "Clark Kent",
+    "origin_description": "Born on Krypton...",
+    "superpowers": ["flight", "super strength"],
+    "catch_phrase": "Look, up in the sky!",
+    "createdAt": "2025-08-18T15:40:00.000Z",
+    "updatedAt": "2025-08-18T15:40:00.000Z"
+  }
+  ```
 
-# watch mode
-$ npm run start:dev
+### 2. List Superheroes
+- **Method**: `GET`
+- **URL**: `/superhero?page=<number>` (optional pagination)
+- **Description**: Returns a list of superheroes (5 per page) with one image each.
+- **Example**:
+  ```bash
+  curl http://localhost:3000/superhero?page=1
+  ```
+- **Response** (200 OK):
+  ```json
+  [
+    {
+      "id": 1,
+      "nickname": "Superman",
+      "real_name": "Clark Kent",
+      "origin_description": "Born on Krypton...",
+      "superpowers": ["flight", "super strength"],
+      "catch_phrase": "Look, up in the sky!",
+      "images": [
+        {
+          "id": 1,
+          "mimeType": "image/jpeg",
+          "data": {"0": 255, "1": 216, ...}
+        }
+      ]
+    },
+    // Up to 5 superheroes
+  ]
+  ```
 
-# production mode
-$ npm run start:prod
-```
+### 3. Get Superhero Details
+- **Method**: `GET`
+- **URL**: `/superhero/:id`
+- **Description**: Returns all fields and all images for a single superhero.
+- **Example**:
+  ```bash
+  curl http://localhost:3000/superhero/1
+  ```
+- **Response** (200 OK):
+  ```json
+  {
+    "id": 1,
+    "nickname": "Superman",
+    "real_name": "Clark Kent",
+    "origin_description": "Born on Krypton...",
+    "superpowers": ["flight", "super strength"],
+    "catch_phrase": "Look, up in the sky!",
+    "images": [
+      {
+        "id": 1,
+        "mimeType": "image/jpeg",
+        "data": {"0": 255, "1": 216, ...}
+      },
+      {
+        "id": 2,
+        "mimeType": "image/png",
+        "data": {"0": 255, "1": 216, ...}
+      }
+    ]
+  }
+  ```
 
-## Run tests
+### 4. Update Superhero
+- **Method**: `PATCH`
+- **URL**: `/superhero/:id`
+- **Content-Type**: `multipart/form-data`
+- **Body**:
+  - `nickname`: String (optional)
+  - `real_name`: String (optional)
+  - `origin_description`: String (optional)
+  - `superpowers`: Array of strings (optional, sent as repeated keys)
+  - `catch_phrase`: String (optional)
+  - `newImages`: Files (optional, max 10, .jpg/.jpeg/.png, 5MB each)
+  - `deleteImagesIds`: Array of numbers (optional, sent as repeated keys)
+- **Example**:
+  ```bash
+  curl -X PATCH http://localhost:3000/superhero/1 \
+    -F "nickname=SuperMan2" \
+    -F "superpowers=x-ray vision" \
+    -F "superpowers=super speed" \
+    -F "deleteImagesIds=1" \
+    -F "newImages=@newimage.jpg"
+  ```
+- **Response** (200 OK):
+  ```json
+  {
+    "id": 1,
+    "nickname": "SuperMan2",
+    "real_name": "Clark Kent",
+    "origin_description": "Born on Krypton...",
+    "superpowers": ["x-ray vision", "super speed"],
+    "catch_phrase": "Look, up in the sky!",
+    "createdAt": "2025-08-18T15:40:00.000Z",
+    "updatedAt": "2025-08-18T16:00:00.000Z",
+    "images": [
+      {
+        "id": 3,
+        "mimeType": "image/jpeg",
+        "data": {"0": 255, "1": 216, ...}
+      }
+    ]
+  }
+  ```
 
-```bash
-# unit tests
-$ npm run test
+### 5. Delete Superhero
+- **Method**: `DELETE`
+- **URL**: `/superhero/:id`
+- **Example**:
+  ```bash
+  curl -X DELETE http://localhost:3000/superhero/1
+  ```
+- **Response** (200 OK):
+  ```json
+  {
+    "id": 1,
+    "nickname": "Superman",
+    "real_name": "Clark Kent",
+    "origin_description": "Born on Krypton...",
+    "superpowers": ["flight", "super strength"],
+    "catch_phrase": "Look, up in the sky!"
+  }
+  ```
 
-# e2e tests
-$ npm run test:e2e
 
-# test coverage
-$ npm run test:cov
-```
+## Assumptions
+1. **Image Storage**: Images are stored as `Bytes` in the database (`Image.data`) due to the requirement to associate images with superheroes. In production, storing images in cloud storage (e.g., AWS S3) with URLs would be more efficient.
+2. **Image Data Format**: The `data` field is returned as a byte object (e.g., `{"0": 255, "1": 216, ...}`) in JSON responses, as serialized by Prisma. Frontends must convert this to a base64 data URL or use a separate endpoint for rendering.
+3. **File Validation**: Only `.jpg`, `.jpeg`, and `.png` files are allowed, with a 5MB size limit per file, enforced by Multer's `fileFilter` and `limits`.
+4. **Superpowers Array**: `superpowers` is sent as repeated keys in `multipart/form-data` (e.g., `superpowers=flight`, `superpowers=super strength`) to support arrays.
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Technical Requirements Fulfillment
+- **Node.js/NestJS**: Built with NestJS for structured, scalable backend development.
+- **Prisma ORM**: Used for database interactions, ensuring type safety and efficient queries.
+- **Multer**: Handles image uploads with validation for file type and size.
+- **CRUD Operations**: Fully implemented for creating, reading, updating, and deleting superheroes.
+- **Pagination**: `GET /superhero?page=<number>` returns 5 superheroes with one image each.
+- **Image Handling**: Supports adding/removing images during creation/updating; `getAll` returns one image, `getOne` and `update` return all images.
+- **Error Handling**: Robust validation and error responses (400, 404) for invalid inputs and missing resources.
