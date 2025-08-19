@@ -32,7 +32,13 @@ export class SuperHeroService {
         },
       });
 
-      return result;
+      return result.map((hero) => ({
+        ...hero,
+        images: hero.images.map((image) => ({
+          ...image,
+          data: `data:${image.mimeType};base64,${Buffer.from(image.data).toString('base64')}`,
+        })),
+      }));
     } else {
       const take = 5;
       const skip = (page - 1) * take;
@@ -60,7 +66,13 @@ export class SuperHeroService {
 
       if (result.length < 1) throw new NotFoundException();
 
-      return result;
+      return result.map((hero) => ({
+        ...hero,
+        images: hero.images.map((image) => ({
+          ...image,
+          data: `data:${image.mimeType};base64,${Buffer.from(image.data).toString('base64')}`,
+        })),
+      }));
     }
   }
 
@@ -88,7 +100,13 @@ export class SuperHeroService {
       throw new NotFoundException();
     }
 
-    return result;
+    return {
+      ...result,
+      images: result.images.map((image) => ({
+        ...image,
+        data: `data:${image.mimeType};base64,${Buffer.from(image.data).toString('base64')}`,
+      })),
+    };
   }
 
   async create(data: CreateHeroDto, files: Array<Express.Multer.File>) {

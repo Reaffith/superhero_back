@@ -32,6 +32,11 @@ export class SuperHeroController {
     return result;
   }
 
+  @Get('pages')
+  async getPages() {
+    return await this.service.getPages();
+  }
+
   @Get()
   async getAll(@Query('page') page?: string) {
     if (page && (isNaN(+page) || +page < 1)) {
@@ -69,10 +74,5 @@ export class SuperHeroController {
     const result = await this.service.delete(id);
 
     return result;
-  }
-
-  @Get('pages')
-  async getPages() {
-    return await this.service.getPages();
   }
 }
